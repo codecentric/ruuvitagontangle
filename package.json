@@ -6,6 +6,7 @@
   "author": "Norbert Schneider & Evgeni Wachnowezki",
   "license": "MIT",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "iota.lib.js": "^0.4.7",
     "noble": "^1.9.0"
   }

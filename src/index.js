@@ -1,4 +1,6 @@
 const noble = require('noble');
+const IOTA = require('iota.lib.js');
+const bluebird = require("bluebird");
 
 noble.on('scanStart', () => {
     console.log('Start scanning');
@@ -93,4 +95,28 @@ noble.on('discover', (peripheral) => {
 
 });
 
-noble.startScanning([], true);
+
+//
+//
+//
+
+(async () => {
+
+    const config = {
+        host: 'http://nodes.iota.fm',
+        port: 80
+    };
+
+    const iota = new IOTA({
+        host: config.host,
+        port: config.port,
+    });
+
+    const api = bluebird.promisifyAll(iota.api);
+
+    let nodeInfo = await api.getNodeInfoAsync();
+    console.log("Connected to Node:", nodeInfo);
+
+//    noble.startScanning([], true);
+})();
+
