@@ -1,6 +1,6 @@
 const noble = require('noble');
 const IOTA = require('iota.lib.js');
-const bluebird = require("bluebird");
+const Mam = require('mam.client.js/lib/mam.node');
 
 noble.on('scanStart', () => {
     console.log('Start scanning');
@@ -122,38 +122,29 @@ const generateSeed = () => {
         port: config.port,
     });
     console.log(`Connected to node ${config.host}:${config.port}`);
-
-    const api = bluebird.promisifyAll(iota.api);
-
-    const attachToTangle = (seed, receiveAddress) => {
-        return async (obj) => {
-            const messag = JSON.stringify(obj);
-            const messageTrytes = iota.utils.toTrytes(messag);
-            console.log(`Converting message: "${message}" -> "${messageTrytes}"`);
-
-            const tag = 'Ruuvi';
-            const tagTrytes = iota.utils.toTrytes(tag);
-            console.log(`Converting tag: "${tag}" -> "${tagTrytes}"`);
-
-            const transfers = [
-                {'address': receiveAddress, 'value': 0, 'message': messageTrytes, 'tag': tagTrytes}
-            ];
-            console.log(transfers);
-
-            console.log('Sending transaction');
-            const result = await api.sendTransfer(seed, 15, 15, transfers);
-            console.log('Transaction attached');
-        }
-    };
-
+    
     const seed = generateSeed();
     console.log('Seed', seed);
 
-    // const receiveAddress = await api.getNewAddressAsync(seed);
     const receiveAddress = 'THGWJXVJCYXY9G9FSQHDSCKPSFPSONXNBJORQBTNNGXLXFZTWMUGFXTUZTBAAHFTQQIICWMQPNIPHSDED';
     console.log('Receive address:', receiveAddress);
 
-    const attach = attachToTangle(seed, receiveAddress);
+    let mam = Mam.init(iota, seed);
+
+    const attach = async (obj) => {
+        const payload = JSON.stringify(obj);
+        const payloadTrytes = iota.utils.toTrytes(payload);
+        console.log(`Converting message: "${payload}" -> "${payloadTrytes}"`);
+
+        const message = Mam.create(mam, payloadTrytes);
+        console.log('Next Root', message.root);
+
+        console.log('Attaching MAM transaction');
+        const transaction = await Mam.attach(message.payload, message.address);
+        console.log(transaction);
+
+        console.log('Attached MAM transaction');
+    };
 
     noble.on('discover', async (peripheral) => {
         if (!isRuuviPeripheral(peripheral)) {
@@ -162,7 +153,7 @@ const generateSeed = () => {
         let manufacturerDataSting = peripheral.advertisement.manufacturerData.toString('hex');
         await attach(parseRawRuuvi(manufacturerDataSting));
     });
-    
+
     noble.startScanning([], true);
 })();
 

@@ -8,6 +8,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "iota.lib.js": "^0.4.7",
+    "mam.client.js": "git+ssh://git@github.com:iotaledger/mam.client.js.git",
     "noble": "^1.9.0"
   }
 }
