@@ -121,11 +121,30 @@ const generateSeed = () => {
         host: config.host,
         port: config.port,
     });
+    console.log(`Connected to node ${config.host}:${config.port}`);
 
     const api = bluebird.promisifyAll(iota.api);
 
-    const nodeInfo = await api.getNodeInfoAsync();
-    console.log('Connected to Node:', nodeInfo);
+    const attachToTangle = (seed, receiveAddress) => {
+        return async (obj) => {
+            const messag = JSON.stringify(obj);
+            const messageTrytes = iota.utils.toTrytes(messag);
+            console.log(`Converting message: "${message}" -> "${messageTrytes}"`);
+
+            const tag = 'Ruuvi';
+            const tagTrytes = iota.utils.toTrytes(tag);
+            console.log(`Converting tag: "${tag}" -> "${tagTrytes}"`);
+
+            const transfers = [
+                {'address': receiveAddress, 'value': 0, 'message': messageTrytes, 'tag': tagTrytes}
+            ];
+            console.log(transfers);
+
+            console.log('Sending transaction');
+            const result = await api.sendTransfer(seed, 15, 15, transfers);
+            console.log('Transaction attached');
+        }
+    };
 
     const seed = generateSeed();
     console.log('Seed', seed);
@@ -134,23 +153,16 @@ const generateSeed = () => {
     const receiveAddress = 'THGWJXVJCYXY9G9FSQHDSCKPSFPSONXNBJORQBTNNGXLXFZTWMUGFXTUZTBAAHFTQQIICWMQPNIPHSDED';
     console.log('Receive address:', receiveAddress);
 
-    const message = "Test message";
-    const messageTrytes = iota.utils.toTrytes(message);
-    console.log(`Converting message: "${message}" -> "${messageTrytes}"`);
+    const attach = attachToTangle(seed, receiveAddress);
 
-    const tag = "test";
-    const tagTrytes = iota.utils.toTrytes(tag);
-    console.log(`Converting tag: "${tag}" -> "${tagTrytes}"`);
-
-    const transfers = [
-        {'address': receiveAddress, 'value': 0, 'message': messageTrytes, 'tag': tagTrytes}
-    ];
-    console.log(transfers);
-
-    console.log('Sending transaction');
-    const result = await api.sendTransferAsync(seed, 15, 15, transfers);
-    console.log('Transaction attached', result);
+    noble.on('discover', async (peripheral) => {
+        if (!isRuuviPeripheral(peripheral)) {
+            return;
+        }
+        let manufacturerDataSting = peripheral.advertisement.manufacturerData.toString('hex');
+        await attach(parseRawRuuvi(manufacturerDataSting));
+    });
     
-//    noble.startScanning([], true);
+    noble.startScanning([], true);
 })();
 
