@@ -1,0 +1,8 @@
+{
+  "name": "ruuvitangle",
+  "version": "1.0.0",
+  "description": "Publish RuuviTag data to the IOTA tangle",
+  "main": "src/index.js",
+  "author": "Norbert Schneider & Evgeni Wachnowezki",
+  "license": "MIT"
+}
