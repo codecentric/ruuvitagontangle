@@ -100,6 +100,16 @@ noble.on('discover', (peripheral) => {
 //
 //
 
+const generateSeed = () => {
+    const length = 81;
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ9";
+    let retVal = [81];
+    for (let i = 0, n = charset.length; i < length; ++i) {
+        retVal[i] = charset.charAt(Math.floor(Math.random() * n));
+    }
+    return retVal.join("");
+};
+
 (async () => {
 
     const config = {
@@ -114,9 +124,33 @@ noble.on('discover', (peripheral) => {
 
     const api = bluebird.promisifyAll(iota.api);
 
-    let nodeInfo = await api.getNodeInfoAsync();
-    console.log("Connected to Node:", nodeInfo);
+    const nodeInfo = await api.getNodeInfoAsync();
+    console.log('Connected to Node:', nodeInfo);
 
+    const seed = generateSeed();
+    console.log('Seed', seed);
+
+    // const receiveAddress = await api.getNewAddressAsync(seed);
+    const receiveAddress = 'THGWJXVJCYXY9G9FSQHDSCKPSFPSONXNBJORQBTNNGXLXFZTWMUGFXTUZTBAAHFTQQIICWMQPNIPHSDED';
+    console.log('Receive address:', receiveAddress);
+
+    const message = "Test message";
+    const messageTrytes = iota.utils.toTrytes(message);
+    console.log(`Converting message: "${message}" -> "${messageTrytes}"`);
+
+    const tag = "test";
+    const tagTrytes = iota.utils.toTrytes(tag);
+    console.log(`Converting tag: "${tag}" -> "${tagTrytes}"`);
+
+    const transfers = [
+        {'address': receiveAddress, 'value': 0, 'message': messageTrytes, 'tag': tagTrytes}
+    ];
+    console.log(transfers);
+
+    console.log('Sending transaction');
+    const result = await api.sendTransferAsync(seed, 15, 15, transfers);
+    console.log('Transaction attached', result);
+    
 //    noble.startScanning([], true);
 })();
 
