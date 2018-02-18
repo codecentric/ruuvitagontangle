@@ -139,11 +139,21 @@ const generateSeed = () => {
         const message = Mam.create(mam, payloadTrytes);
         console.log('Next Root', message.root);
 
-        console.log('Attaching MAM transaction');
-        const transaction = await Mam.attach(message.payload, message.address);
-        console.log(transaction);
-
-        console.log('Attached MAM transaction');
+        // If the attach fails and a new message is generated the chain of
+        // "next root" is broken and the stream can not be followed anymore
+        // so the error case has to be handled with caution (not like here)
+        let attached = false;
+        do {
+            try {
+                console.log('Attaching MAM transaction');
+                const transaction = await Mam.attach(message.payload, message.address);
+                console.log('Transaction attached', transaction);
+                attached = true;
+            } catch (e) {
+                console.error('Could not attach transaction', e);
+                console.log('Retrying to attach transaction');
+            }
+        } while (!attached);
     };
 
     noble.on('discover', async (peripheral) => {
