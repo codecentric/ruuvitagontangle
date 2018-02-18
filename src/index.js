@@ -110,6 +110,22 @@ const generateSeed = () => {
     return retVal.join("");
 };
 
+const onlyOneAsync = (fn) => {
+    let processing = false;
+    return async function() {
+        console.log(processing);
+        if (!processing) {
+            processing = true;
+            console.log(processing);
+            try {
+                await fn.call(null, arguments)
+            } finally {
+                processing = false;
+            }
+        }
+    };
+};
+
 (async () => {
 
     const config = {
@@ -122,7 +138,7 @@ const generateSeed = () => {
         port: config.port,
     });
     console.log(`Connected to node ${config.host}:${config.port}`);
-    
+
     const seed = generateSeed();
     console.log('Seed', seed);
 
@@ -156,14 +172,30 @@ const generateSeed = () => {
         } while (!attached);
     };
 
-    noble.on('discover', async (peripheral) => {
+    // The discover event can be received faster as the attachment can be processed
+    // so some kind of concurrency handling is necessary
+    noble.on('discover', onlyOneAsync(async (peripheral) => {
         if (!isRuuviPeripheral(peripheral)) {
             return;
         }
         let manufacturerDataSting = peripheral.advertisement.manufacturerData.toString('hex');
         await attach(parseRawRuuvi(manufacturerDataSting));
-    });
+    }));
 
     noble.startScanning([], true);
+
+
+    // Small test of the onlyOneAsync function ...
+    // Yeah yeah, only for this little script. Put stuff like this where it belongs.
+    // let fn = onlyOneAsync((args) => new Promise((resolve => {
+    //     setTimeout(() => {
+    //         console.log(args);
+    //         resolve()
+    //     }, 3000);
+    // })));
+    // for (let i = 0; i < 5; i++) {
+    //     fn(i);
+    // }
+
 })();
 
