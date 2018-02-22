@@ -82,20 +82,6 @@ const isRuuviPeripheral = (peripheral) => {
     return manufacturerDataSting.substring(4, 6) === '03';
 };
 
-noble.on('discover', (peripheral) => {
-    if (!isRuuviPeripheral(peripheral)) {
-        return;
-    }
-
-    console.log('------------------------------------------');
-    console.log('Peripheral ID', peripheral.id);
-
-    let manufacturerDataSting = peripheral.advertisement.manufacturerData.toString('hex');
-    console.log(parseRawRuuvi(manufacturerDataSting));
-
-});
-
-
 //
 //
 //
@@ -113,12 +99,10 @@ const generateSeed = () => {
 const onlyOneAsync = (fn) => {
     let processing = false;
     return async function() {
-        console.log(processing);
         if (!processing) {
             processing = true;
-            console.log(processing);
             try {
-                await fn.call(null, arguments)
+                await fn.apply(null, arguments);
             } finally {
                 processing = false;
             }
